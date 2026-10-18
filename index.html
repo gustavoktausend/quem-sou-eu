@@ -39,6 +39,7 @@
     --radius: 6px;
   }
   * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  [hidden] { display: none !important; }
   html, body { height: 100%; margin: 0; }
   body {
     font-family: "Rubik", system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
@@ -125,6 +126,12 @@
   }
   .big-btn:active { transform: translateY(4px); box-shadow: 0 2px 0 rgba(0,0,0,.3); }
   .link-btn { color: var(--muted); text-decoration: underline; text-underline-offset: 3px; font-size: .95rem; padding: 8px; }
+  .toggle { display: inline-flex; align-items: center; gap: 12px; padding: 10px 16px; border: 1.5px solid var(--line); border-radius: 999px; font-weight: 500; cursor: pointer; }
+  .toggle input { appearance: none; width: 42px; height: 24px; border-radius: 999px; background: var(--line); position: relative; margin: 0; flex: none; transition: background .15s; }
+  .toggle input::after { content: ""; position: absolute; top: 3px; left: 3px; width: 18px; height: 18px; border-radius: 50%; background: var(--paper); transition: transform .15s; }
+  .toggle input:checked { background: var(--ok); }
+  .toggle input:checked::after { transform: translateX(18px); }
+  .toggle input:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 
   .countdown { position: fixed; inset: 0; display: none; place-items: center; background: var(--room); z-index: 20; }
   .countdown.active { display: grid; }
@@ -160,6 +167,12 @@
   .action.ok { background: var(--ok); color: var(--ok-ink); }
   .action small { display: block; font-weight: 500; font-size: .8rem; opacity: .75; margin-top: 2px; }
   .stop-btn { color: var(--muted); font-size: .9rem; padding: 8px 10px; border: 1.5px solid var(--line); border-radius: 999px; }
+  .notice { text-align: center; color: var(--muted); font-size: .85rem; padding: 0 20px 10px; margin: 0; }
+  .feedback { position: fixed; inset: 0; z-index: 15; display: none; place-items: center; text-align: center; font-weight: 900; font-size: clamp(3rem, 16vmin, 8rem); line-height: 1; letter-spacing: -.02em; }
+  .feedback.show { display: grid; }
+  .feedback.ok { background: var(--ok); color: var(--ok-ink); }
+  .feedback.skip { background: var(--skip); color: var(--skip-ink); }
+  .feedback .arrow { display: block; font-size: .5em; font-weight: 700; margin-top: .3em; opacity: .8; }
 
   @media (orientation: landscape) and (max-height: 520px) {
     .screen.play.active { display: grid; grid-template-columns: 1fr minmax(0, 2.2fr) 1fr; grid-template-rows: auto auto minmax(0, 1fr); height: 100dvh; min-height: 0; }
@@ -244,6 +257,7 @@
 <section class="screen ready" id="ready" aria-label="Prepare-se">
   <div class="theme-note"><span class="emoji" id="readyEmoji">🦁</span><span id="readyName">Animais</span></div>
   <p>Segure o celular na testa com a tela virada para os amigos.<span id="readyHint">Eles dão as dicas, você tenta descobrir. Quem está olhando toca em <b>Acertou</b> ou <b>Pular</b>.</span></p>
+  <label class="toggle" id="tiltWrap" hidden><input type="checkbox" id="tiltToggle"> Inclinar o celular para responder</label>
   <button class="big-btn" id="startBtn">Começar</button>
   <button class="link-btn" id="backBtn">Trocar tema</button>
 </section>
@@ -262,9 +276,11 @@
     <div class="word-note" id="wordNote"><div class="word" id="word" aria-live="polite">…</div></div>
   </div>
   <div class="actions">
-    <button class="action skip" id="skipBtn">Pular</button>
-    <button class="action ok" id="okBtn">Acertou</button>
+    <button class="action skip" id="skipBtn">Pular<small class="tilt-hint" hidden>ou incline para cima</small></button>
+    <button class="action ok" id="okBtn">Acertou<small class="tilt-hint" hidden>ou incline para baixo</small></button>
   </div>
+  <p class="notice" id="tiltNotice" hidden>Sem acesso ao sensor de movimento — use os botões.</p>
+  <div class="feedback" id="feedback" aria-live="assertive"><div id="feedbackText"></div></div>
 </section>
 
 <!-- ===== Resultado ===== -->
@@ -326,6 +342,7 @@
   const state = {
     theme: null, duration: store.get('qse.duration', 60), muted: store.get('qse.muted', false),
     queue: [], current: null, results: [], endAt: 0, timerId: null, running: false, wakeLock: null, editingId: null,
+    feedback: false, fbTimer: null, tiltOn: false,
   };
   const customThemes = () => store.get('qse.custom', []);
 
@@ -409,7 +426,12 @@
 
   /* ============ Preparação e contagem ============ */
   $('backBtn').addEventListener('click', () => show('home'));
-  $('startBtn').addEventListener('click', () => { audio(); startCountdown(); });
+  $('startBtn').addEventListener('click', async () => {
+    audio();
+    state.tiltOn = await tiltPermission();   // no iPhone, o pedido de permissão precisa nascer deste toque
+    $('tiltNotice').hidden = !(tilt.enabled && tilt.supported && !state.tiltOn);
+    startCountdown();
+  });
 
   function startCountdown() {
     const cd = $('countdown'), num = $('countNum');
@@ -446,8 +468,10 @@
     $('scoreNum').textContent = '0';
     const timed = state.duration > 0;
     $('timer').hidden = !timed; $('bar').hidden = !timed; $('stopBtn').hidden = timed;
+    document.querySelectorAll('.tilt-hint').forEach(h => { h.hidden = !state.tiltOn; });
     show('play');
     showWord(nextWord());
+    if (state.tiltOn) tiltStart();
     try { if ('wakeLock' in navigator) state.wakeLock = await navigator.wakeLock.request('screen'); } catch {}
     if (timed) {
       state.endAt = Date.now() + state.duration * 1000;
@@ -482,13 +506,31 @@
   }
   window.addEventListener('resize', () => { if (state.running) fitWord(); });
 
-  function answer(kind) {
-    if (!state.running) return;
+  function answer(kind, source = 'tap') {
+    if (!state.running || state.feedback) return;
     state.results.push({ word: state.current, kind });
     if (kind === 'ok') { sfx.ok(); buzz(40); $('scoreNum').textContent = state.results.filter(r => r.kind === 'ok').length; }
     else { sfx.skip(); buzz([20, 40, 20]); }
+    showFeedback(kind, source);
     showWord(nextWord());
   }
+  // Cobre a tela com "Acertou!" ou "Pulou" por um instante. No gesto, espera o celular voltar para a testa
+  // antes de mostrar a próxima palavra, para ninguém ver a palavra nova com o celular ainda inclinado.
+  function showFeedback(kind, source) {
+    const fb = $('feedback');
+    $('feedbackText').innerHTML = kind === 'ok' ? 'Acertou!' : 'Pulou';
+    fb.className = 'feedback show ' + kind;
+    state.feedback = true; clearTimeout(state.fbTimer);
+    const started = Date.now(), minMs = 450, maxMs = source === 'tilt' ? 2500 : 450;
+    const check = () => {
+      const elapsed = Date.now() - started;
+      const upright = source !== 'tilt' || Math.abs(tilt.up) < 0.25;
+      if (elapsed >= minMs && (upright || elapsed >= maxMs)) { hideFeedback(); if (upright) tilt.armed = true; }
+      else state.fbTimer = setTimeout(check, 60);
+    };
+    state.fbTimer = setTimeout(check, minMs);
+  }
+  function hideFeedback() { clearTimeout(state.fbTimer); state.feedback = false; $('feedback').className = 'feedback'; }
   $('okBtn').addEventListener('click', () => answer('ok'));
   $('skipBtn').addEventListener('click', () => answer('skip'));
   $('stopBtn').addEventListener('click', () => endRound('stop'));
@@ -501,7 +543,9 @@
   function endRound(reason) {
     if (!state.running) return;
     state.running = false; clearInterval(state.timerId); lastTick = -1;
-    if (state.current && reason !== 'stop') state.results.push({ word: state.current, kind: 'time' });
+    tiltStop();
+    if (state.current && reason !== 'stop' && !state.feedback) state.results.push({ word: state.current, kind: 'time' });
+    hideFeedback();
     if (reason === 'time') { sfx.end(); buzz([80, 60, 80, 60, 160]); }
     try { state.wakeLock && state.wakeLock.release(); } catch {} state.wakeLock = null;
     renderResult();
@@ -563,6 +607,54 @@
     store.set('qse.custom', list); store.del('qse.used.' + id);
     dlg.close(); renderGrid();
   });
+
+  /* ============ Gesto: inclinar o celular ============ */
+  // O celular fica em pé na testa. Inclinar a tela para o chão = acertou; para o céu = pular.
+  // Usa beta/gamma do DeviceOrientation para calcular quanto a tela aponta para cima (+1), para baixo (-1) ou está em pé (0).
+  // Esse cálculo vale em retrato e em paisagem, e não depende de como a tela está girada.
+  const tilt = {
+    supported: 'DeviceOrientationEvent' in window && navigator.maxTouchPoints > 0,
+    enabled: store.get('qse.tilt', true),
+    handler: null, armed: false, last: 0, up: 0,
+  };
+  const DOWN = -0.45, UP = 0.45, UPRIGHT = 0.25, COOLDOWN = 700;
+  async function tiltPermission() {
+    if (!tilt.supported || !tilt.enabled) return false;
+    try {
+      if (typeof DeviceOrientationEvent.requestPermission === 'function') {
+        return (await DeviceOrientationEvent.requestPermission()) === 'granted';
+      }
+      return true;
+    } catch { return false; }
+  }
+  function tiltStart() {
+    tiltStop();
+    tilt.armed = false; tilt.last = 0; tilt.up = 0;
+    tilt.handler = (e) => {
+      if (e.beta == null || e.gamma == null) return;
+      const b = e.beta * Math.PI / 180, g = e.gamma * Math.PI / 180;
+      tilt.up = Math.cos(b) * Math.cos(g);
+      if (!state.running || state.feedback) return;
+      if (!tilt.armed) { if (Math.abs(tilt.up) < UPRIGHT) tilt.armed = true; return; } // só arma depois que o celular está em pé
+      if (Date.now() - tilt.last < COOLDOWN) return;
+      if (tilt.up < DOWN) { tilt.armed = false; tilt.last = Date.now(); answer('ok', 'tilt'); }
+      else if (tilt.up > UP) { tilt.armed = false; tilt.last = Date.now(); answer('skip', 'tilt'); }
+    };
+    window.addEventListener('deviceorientation', tilt.handler);
+  }
+  function tiltStop() {
+    if (tilt.handler) window.removeEventListener('deviceorientation', tilt.handler);
+    tilt.handler = null;
+  }
+  $('tiltWrap').hidden = !tilt.supported;
+  $('tiltToggle').checked = tilt.enabled;
+  function syncTiltHint() {
+    $('readyHint').innerHTML = tilt.supported && tilt.enabled
+      ? 'Eles dão as dicas, você tenta descobrir. Acertou? Incline o celular <b>para baixo</b>. Quer pular? Incline <b>para cima</b>.'
+      : 'Eles dão as dicas, você tenta descobrir. Quem está olhando toca em <b>Acertou</b> ou <b>Pular</b>.';
+  }
+  $('tiltToggle').addEventListener('change', (e) => { tilt.enabled = e.target.checked; store.set('qse.tilt', tilt.enabled); syncTiltHint(); });
+  syncTiltHint();
 
   /* ============ PWA ============ */
   let deferredPrompt = null;
