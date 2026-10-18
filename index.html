@@ -57,7 +57,7 @@
   .screen.active { display: flex; }
 
   /* ---------- Home ---------- */
-  .home { padding: calc(var(--safe-top) + 24px) 20px calc(var(--safe-bottom) + 28px); max-width: 560px; margin: 0 auto; width: 100%; }
+  .home { padding: calc(var(--safe-top) + 24px) max(20px, env(safe-area-inset-right)) calc(var(--safe-bottom) + 28px) max(20px, env(safe-area-inset-left)); max-width: 560px; margin: 0 auto; width: 100%; }
   .hero { display: flex; justify-content: center; margin: 8px 0 28px; }
   .hero-note {
     position: relative; background: var(--note); color: var(--ink);
@@ -115,7 +115,7 @@
   .foot p { margin: 8px 0 0; }
 
   /* ---------- Ready ---------- */
-  .ready { padding: calc(var(--safe-top) + 20px) 20px calc(var(--safe-bottom) + 20px); align-items: center; justify-content: center; text-align: center; gap: 22px; }
+  .ready { padding: calc(var(--safe-top) + 20px) max(20px, env(safe-area-inset-right)) calc(var(--safe-bottom) + 20px) max(20px, env(safe-area-inset-left)); align-items: center; justify-content: center; text-align: center; gap: 22px; }
   .ready .theme-note { background: var(--note); color: var(--ink); padding: 16px 22px; font-weight: 700; font-size: 1.3rem; transform: rotate(-2deg); box-shadow: 3px 4px 0 rgba(0,0,0,.26); }
   .ready .theme-note .emoji { font-size: 2.2rem; display: block; margin-bottom: 4px; }
   .ready p { max-width: 34ch; margin: 0; font-size: 1.05rem; color: var(--text); }
@@ -138,7 +138,7 @@
   .countdown .num { font-size: clamp(6rem, 30vmin, 12rem); font-weight: 900; line-height: 1; color: var(--note); }
 
   /* ---------- Play ---------- */
-  .play { padding: var(--safe-top) 0 var(--safe-bottom); position: relative; }
+  .play { padding: var(--safe-top) env(safe-area-inset-right, 0px) var(--safe-bottom) env(safe-area-inset-left, 0px); position: relative; }
   .play-top { display: flex; align-items: center; justify-content: space-between; padding: 14px 20px 6px; }
   .play-top .score { font-weight: 700; font-size: 1.1rem; color: var(--text); }
   .play-top .score b { color: var(--ok); font-size: 1.4rem; }
@@ -186,7 +186,7 @@
   }
 
   /* ---------- Result ---------- */
-  .result { padding: calc(var(--safe-top) + 24px) 20px calc(var(--safe-bottom) + 28px); max-width: 560px; margin: 0 auto; width: 100%; align-items: stretch; }
+  .result { padding: calc(var(--safe-top) + 24px) max(20px, env(safe-area-inset-right)) calc(var(--safe-bottom) + 28px) max(20px, env(safe-area-inset-left)); max-width: 560px; margin: 0 auto; width: 100%; align-items: stretch; }
   .result-note { align-self: center; background: var(--note); color: var(--ink); padding: 20px 30px; text-align: center; transform: rotate(2deg); box-shadow: 4px 6px 0 rgba(0,0,0,.28); margin-bottom: 26px; }
   .result-note .n { font-size: 4.2rem; font-weight: 900; line-height: 1; }
   .result-note .l { font-weight: 500; opacity: .8; }
@@ -202,7 +202,7 @@
   .btns .ghost { width: 100%; max-width: 360px; padding: 16px; border-radius: 999px; border: 1.5px solid var(--line); font-weight: 500; }
 
   /* ---------- Dialog (tema personalizado) ---------- */
-  dialog { border: 0; border-radius: 16px; padding: 0; width: min(92vw, 440px); background: var(--paper); color: var(--ink); }
+  dialog { border: 0; border-radius: 16px; padding: 0; width: min(92vw, 440px); max-height: 92dvh; overflow: auto; background: var(--paper); color: var(--ink); }
   dialog::backdrop { background: rgba(10, 6, 20, .7); }
   dialog form { padding: 22px 20px; display: flex; flex-direction: column; gap: 14px; }
   dialog h3 { margin: 0; font-size: 1.3rem; font-weight: 900; }
@@ -216,6 +216,41 @@
   dialog .cancel { border: 1.5px solid rgba(0,0,0,.25); }
   dialog .danger { color: #B3261E; margin-right: auto; }
 
+  /* ---------- Horizontal (o formato do jogo) ---------- */
+  @media (orientation: landscape) and (max-height: 520px) {
+    .home { max-width: 980px; padding-top: calc(var(--safe-top) + 14px); }
+    .home-top { display: grid; grid-template-columns: minmax(230px, 300px) 1fr; gap: 10px 32px; align-items: center; margin-bottom: 14px; }
+    .hero { margin: 12px 0 10px; justify-content: flex-start; }
+    .hero-note { font-size: 1.85rem; padding: 16px 20px 18px; width: 100%; }
+    .hero-note small { font-size: .9rem; margin-top: 8px; }
+    .hero-note .mark { font-size: 3.8rem; top: -16px; right: 10px; }
+    .row { margin-bottom: 0; }
+    .grid { grid-template-columns: repeat(4, 1fr); gap: 16px 14px; }
+    .note-card { min-height: 104px; }
+    .foot { margin-top: 20px; }
+
+    .screen.ready.active { display: grid; grid-template-columns: auto 1fr; column-gap: 36px; row-gap: 12px; align-content: center; justify-content: center; justify-items: start; text-align: left; }
+    .ready .theme-note { grid-row: 1 / span 4; align-self: center; font-size: 1.2rem; padding: 14px 22px; }
+    .ready p { max-width: 44ch; font-size: 1rem; }
+    .ready .big-btn { padding: 14px 32px; font-size: 1.15rem; }
+    .ready .link-btn { padding: 4px 8px; }
+    .countdown .num { font-size: clamp(5rem, 40vmin, 9rem); }
+
+    .screen.result.active { max-width: 860px; display: grid; grid-template-columns: auto 1fr; column-gap: 32px; align-content: start; }
+    .result-note { grid-column: 1; grid-row: 1 / span 2; align-self: start; margin: 8px 0 0; }
+    .result .list { grid-column: 2; margin-bottom: 16px; }
+    .result .btns { grid-column: 2; }
+  }
+
+  /* ---------- Em pé: pede para girar ---------- */
+  .rotate { display: none; position: fixed; inset: 0; z-index: 50; background: var(--room); place-content: center; place-items: center; text-align: center; padding: 32px; gap: 10px; }
+  .rotate p { margin: 0; font-weight: 900; font-size: 1.6rem; }
+  .rotate small { color: var(--muted); max-width: 32ch; line-height: 1.4; }
+  .rotate .phone { width: 46px; height: 84px; border: 4px solid var(--note); border-radius: 10px; margin-bottom: 14px; position: relative; animation: turn 1.6s ease-in-out infinite alternate; }
+  .rotate .phone::after { content: ""; position: absolute; left: 50%; bottom: 6px; width: 10px; height: 4px; margin-left: -5px; border-radius: 2px; background: var(--note); }
+  @keyframes turn { 0%, 30% { transform: rotate(0); } 70%, 100% { transform: rotate(-90deg); } }
+  @media (orientation: portrait) and (pointer: coarse) { .rotate { display: grid; } }
+
   .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   @media (prefers-reduced-motion: reduce) { * { animation: none !important; transition: none !important; } }
 </style>
@@ -224,23 +259,25 @@
 
 <!-- ===== Tela inicial ===== -->
 <section class="screen home active" id="home" aria-label="Escolha um tema">
-  <div class="hero">
-    <h1 class="hero-note">Quem<br>sou eu?<span class="mark" aria-hidden="true">?</span>
-      <small>Escolha um tema. Uma pessoa segura o celular na testa, os outros dão dicas e ela tenta descobrir quem é.</small>
-    </h1>
-  </div>
-
-  <div class="row">
-    <div>
-      <h2>Tempo da rodada</h2>
-      <div class="chips" id="durations" role="group" aria-label="Tempo da rodada">
-        <button class="chip" data-d="30">30s</button>
-        <button class="chip" data-d="60" aria-pressed="true">60s</button>
-        <button class="chip" data-d="90">90s</button>
-        <button class="chip" data-d="0" title="Sem limite de tempo">∞</button>
-      </div>
+  <div class="home-top">
+    <div class="hero">
+      <h1 class="hero-note">Quem<br>sou eu?<span class="mark" aria-hidden="true">?</span>
+        <small>Escolha um tema. Uma pessoa segura o celular na testa, os outros dão dicas e ela tenta descobrir quem é.</small>
+      </h1>
     </div>
-    <button class="icon-btn" id="muteBtn" aria-label="Som ligado" aria-pressed="false">🔔</button>
+
+    <div class="row">
+      <div>
+        <h2>Tempo da rodada</h2>
+        <div class="chips" id="durations" role="group" aria-label="Tempo da rodada">
+          <button class="chip" data-d="30">30s</button>
+          <button class="chip" data-d="60" aria-pressed="true">60s</button>
+          <button class="chip" data-d="90">90s</button>
+          <button class="chip" data-d="0" title="Sem limite de tempo">∞</button>
+        </div>
+      </div>
+      <button class="icon-btn" id="muteBtn" aria-label="Som ligado" aria-pressed="false">🔔</button>
+    </div>
   </div>
 
   <h2>Temas</h2>
@@ -263,6 +300,13 @@
 </section>
 
 <div class="countdown" id="countdown" aria-live="assertive"><div class="num" id="countNum">3</div></div>
+
+<!-- Aparece só quando o aparelho está em pé: o jogo é na horizontal -->
+<div class="rotate" id="rotate">
+  <div class="phone" aria-hidden="true"></div>
+  <p>Gire o celular para jogar</p>
+  <small>O jogo é na horizontal. Se a tela não girar, desative o bloqueio de rotação do aparelho.</small>
+</div>
 
 <!-- ===== Rodada ===== -->
 <section class="screen play" id="play" aria-label="Rodada">
@@ -426,8 +470,19 @@
 
   /* ============ Preparação e contagem ============ */
   $('backBtn').addEventListener('click', () => show('home'));
+  // Trava a horizontal onde o sistema permite (Android: precisa estar em tela cheia ou instalado).
+  // No iPhone o Safari não deixa travar; aí o aviso "gire o celular" cobre a tela enquanto estiver em pé.
+  async function lockLandscape() {
+    const standalone = window.matchMedia('(display-mode: standalone)').matches || navigator.standalone === true;
+    try {
+      if (!standalone && document.fullscreenEnabled && !document.fullscreenElement) await document.documentElement.requestFullscreen({ navigationUI: 'hide' });
+    } catch {}
+    try { if (screen.orientation && screen.orientation.lock) await screen.orientation.lock('landscape'); } catch {}
+  }
+
   $('startBtn').addEventListener('click', async () => {
     audio();
+    lockLandscape();
     state.tiltOn = await tiltPermission();   // no iPhone, o pedido de permissão precisa nascer deste toque
     $('tiltNotice').hidden = !(tilt.enabled && tilt.supported && !state.tiltOn);
     startCountdown();

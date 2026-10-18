@@ -8,6 +8,7 @@ Jogo de adivinhação para jogar com amigos, direto no celular. Escolha um tema,
 
 - 12 temas prontos (animais, comidas, profissões, filmes e séries, personagens, marcas…) com mais de 900 palavras, além do modo "Tudo misturado".
 - Rodadas de 30, 60 ou 90 segundos, ou sem limite de tempo.
+- O jogo é na horizontal: instalado no Android ele já abre deitado; no navegador ele trava a orientação ao começar a rodada quando o sistema permite, e em pé mostra um aviso para girar o celular.
 - Para responder, incline o celular **para baixo** quando acertar e **para cima** para pular (estilo Heads Up). Quem está vendo a tela também pode tocar em **Acertou** ou **Pular**. No fim aparece o placar com tudo que saiu.
 - No iPhone, o Safari pede permissão para usar o sensor de movimento na primeira rodada; se negar, os botões continuam funcionando.
 - Temas personalizados: crie o seu com uma palavra por linha (fica salvo só no aparelho).

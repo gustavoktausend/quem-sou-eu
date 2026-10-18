@@ -1,5 +1,5 @@
 /* Service worker do Quem Sou Eu? — deixa o jogo funcionar sem internet. */
-const VERSION = 'qse-v1';
+const VERSION = 'qse-v2';
 const SHELL = [
   './',
   './index.html',
